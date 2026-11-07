@@ -1,0 +1,84 @@
+{
+  "origin": "https://gqc2.top",
+  "headers": {
+    "User-Agent": "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36",
+    "Referer": "{origin}/"
+  },
+  "cover": {
+    "mode": "plain",
+    "allowedHosts": [
+      "1.000163.xyz",
+      "2.000163.xyz",
+      "img.meituan.net",
+      "p0.meituan.net",
+      "p1.meituan.net"
+    ]
+  },
+  "web": {
+    "spider": "https://raw.githubusercontent.com/asd5205651/aiivideo/main/gqc2.js",
+    "ui": {
+      "tabs": [
+        {
+          "key": "dianying",
+          "label": "电影",
+          "icon": "film"
+        },
+        {
+          "key": "lianxuju",
+          "label": "连续剧",
+          "icon": "tv"
+        },
+        {
+          "key": "zongyi",
+          "label": "综艺",
+          "icon": "mic"
+        },
+        {
+          "key": "dongman",
+          "label": "动漫",
+          "icon": "sparkle"
+        }
+      ],
+      "categoryIds": {
+        "电影": [
+          "dianying"
+        ],
+        "连续剧": [
+          "lianxuju"
+        ],
+        "综艺": [
+          "zongyi"
+        ],
+        "动漫": [
+          "dongman"
+        ],
+        "短剧": [
+          "duanju"
+        ]
+      }
+    },
+    "categories": {
+      "dianying": "电影",
+      "lianxuju": "连续剧",
+      "zongyi": "综艺",
+      "dongman": "动漫",
+      "duanju": "短剧",
+      "dongzuo": "动作片",
+      "xiju": "喜剧片",
+      "juqing": "剧情片",
+      "kehuan": "科幻片",
+      "aiqing": "爱情片",
+      "kongbu": "恐怖片",
+      "zhanzheng": "战争片"
+    },
+    "shield": {
+      "warmup": "https://gqc2.top/fenlei/dianying.html",
+      "hosts": [
+        "gqc2.top",
+        "1.000163.xyz",
+        "2.000163.xyz"
+      ],
+      "cookie": "https://gqc2.top/"
+    }
+  }
+}
