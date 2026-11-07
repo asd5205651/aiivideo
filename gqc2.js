@@ -92,6 +92,8 @@ __spiderSite = {
       lines.push({ line: ep.line, name: ep.lineName || ('线路 ' + ep.line) });
     }
 
+    // 只返回第一条线路的集：协议里 episodes 不按线路分组，
+    // 把所有线路的集都塞进去，App 会画成「1-8 重复十几遍」。
     const firstLine = lines[0].line;
     const inFirst = eps.filter(function (e) { return e.line === firstLine; });
 
@@ -102,8 +104,8 @@ __spiderSite = {
       description: stripTags(description || ''),
       tags: [],
       episodeCount: inFirst.length,
-      episodes: eps.map(function (e) {
-        return { no: e.no, ref: e.ref, title: e.title || ('第' + e.no + '集'), line: e.line };
+      episodes: inFirst.map(function (e) {
+        return { no: e.no, ref: e.ref, title: e.title || ('第' + e.no + '集') };
       }),
       lines: lines
     };
@@ -318,8 +320,18 @@ function scanEpisodes(html, id) {
  */
 function extractPlay(html) {
   const out = { url: '', from: '', host: '' };
+  const clean = html.replace(/&amp;/g, '&').replace(/\\\//g, '/');
 
-  // ① iframe 上的 data-play：直链 m3u8/mp4，最优先
+  // ① 播放器 iframe 的 src 里带 url=<m3u8>：实测这站最常见，最先取
+  const ifrUrl = clean.match(/<(?:iframe|frame)[^>]+src="[^"]*[?&]url=(https?[^"&]+)/i);
+  if (ifrUrl) {
+    const src = absolute(decodeURIComponent(ifrUrl[1]));
+    if (/^https?:/i.test(src) && /\.(?:m3u8|mp4|flv)/i.test(src)) {
+      out.url = src; out.host = hostOf(src); return out;
+    }
+  }
+
+  // ② iframe 上的 data-play：直链 m3u8/mp4
   const dp = html.match(/data-play\s*=\s*"([^"]{6,500})"/i);
   if (dp) {
     const src = absolute(decodeEntities(dp[1]));
