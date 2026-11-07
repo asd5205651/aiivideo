@@ -1,8 +1,9 @@
 {
   "origin": "https://gqc2.top",
   "headers": {
-    "User-Agent": "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36",
-    "Referer": "{origin}/"
+    "User-Agent": "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36",
+    "Referer": "{origin}/",
+    "Origin": "{origin}"
   },
   "cover": {
     "mode": "plain",
@@ -76,9 +77,28 @@
       "hosts": [
         "gqc2.top",
         "1.000163.xyz",
-        "2.000163.xyz"
+        "2.000163.xyz",
+        "3.000163.xyz"
       ],
       "cookie": "https://gqc2.top/"
     }
+  },
+  "http": {
+    "hosts": [
+      "gqc2.top",
+      "www.gqc2.top",
+      "v.lzcdn24.com",
+      "v.lzcdn25.com",
+      "v.lzcdn26.com",
+      "v.lzcdn27.com",
+      "cdn.yzzy31-play.com",
+      "cdn.yzzy32-play.com",
+      "cdn.yzzy33-play.com",
+      "cdn.yzzy34-play.com",
+      "play.gqc.ink",
+      "gqc.ink",
+      "jx.hls.one",
+      "jx.202617.xyz"
+    ]
   }
 }

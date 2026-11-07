@@ -151,7 +151,8 @@ __spiderSite = {
       return {
         url: found.url,
         alts: [{ line: String(line), name: (found.from ? found.from + ' ' : '') + '线路 ' + line, url: found.url }],
-        episodeNumber: Number(no)
+        episodeNumber: Number(no),
+        note: found.host ? ('CDN: ' + found.host) : ''
       };
     }
 
@@ -301,19 +302,19 @@ function scanEpisodes(html, id) {
  * 优先 data-play（直链），其次页面里的 m3u8，最后 data-pars / iframe src。
  */
 function extractPlay(html) {
-  const out = { url: '', from: '' };
+  const out = { url: '', from: '', host: '' };
 
   // ① iframe 上的 data-play：直链 m3u8/mp4，最优先
   const dp = html.match(/data-play\s*=\s*"([^"]{6,500})"/i);
   if (dp) {
     const src = absolute(decodeEntities(dp[1]));
-    if (/^https?:/i.test(src)) { out.url = src; return out; }
+    if (/^https?:/i.test(src)) { out.url = src; out.host = hostOf(src); return out; }
   }
 
   // ② 页面里任意 m3u8 / mp4（含转义 \/ 和 &amp;）
   const cleaned = html.replace(/\\\//g, '/').replace(/&amp;/g, '&');
   const mm = cleaned.match(/(https?:\/\/[^"'\s<>\\]{6,400}?\.(?:m3u8|mp4)(?:\?[^"'\s<>\\]{0,200})?)/i);
-  if (mm) { out.url = absolute(mm[1]); return out; }
+  if (mm) { out.url = absolute(mm[1]); out.host = hostOf(out.url); return out; }
 
   // ③ MacCMS player_xxxx = {...}
   const pv = cleaned.match(/player_[a-z0-9_]+\s*=\s*(\{[\s\S]{0,6000}?\})\s*;?/i);
@@ -350,4 +351,10 @@ function diagExcerpt(html) {
   if (best < 0) best = Math.floor(html.length / 2);
   const from = Math.max(0, best - 200);
   return html.slice(from, from + 900).replace(/\s+/g, ' ').slice(0, 700);
+}
+
+/** 取 URL 的主机名，用于诊断/日志 */
+function hostOf(u) {
+  const m = String(u || '').match(/^https?:\/\/([^/?#]+)/i);
+  return m ? m[1].toLowerCase() : '';
 }
