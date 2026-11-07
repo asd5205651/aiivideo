@@ -6,7 +6,7 @@ __spiderSite = {
   name: '共青春影院',
   version: 1,
   requires: '>=1',
-  hosts: ['gqc2.top', 'www.gqc2.top', '1.000163.xyz', '2.000163.xyz'],
+  hosts: ['gqc2.top', 'www.gqc2.top', '1.000163.xyz', '2.000163.xyz', '3.000163.xyz'],
 
   async home(ctx) {
     const html = await get(ctx, BASE() + '/');
