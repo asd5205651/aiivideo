@@ -41,21 +41,58 @@
         }
       ],
       "categoryIds": {
-        "电影": [
-          "dianying"
+        "dianying": [
+          "dianying",
+          "dongzuo",
+          "xiju",
+          "juqing",
+          "kehuan",
+          "aiqing",
+          "kongbu",
+          "zhanzheng"
         ],
-        "连续剧": [
+        "lianxuju": [
           "lianxuju"
         ],
-        "综艺": [
+        "zongyi": [
           "zongyi"
         ],
-        "动漫": [
+        "dongman": [
           "dongman"
-        ],
-        "短剧": [
-          "duanju"
         ]
+      },
+      "categoryLabels": {
+        "dianying": [
+          "全部",
+          "动作片",
+          "喜剧片",
+          "剧情片",
+          "科幻片",
+          "爱情片",
+          "恐怖片",
+          "战争片"
+        ],
+        "lianxuju": [
+          "连续剧"
+        ],
+        "zongyi": [
+          "综艺"
+        ],
+        "dongman": [
+          "动漫"
+        ]
+      },
+      "categoryTitles": {
+        "dianying": "电影",
+        "lianxuju": "连续剧",
+        "zongyi": "综艺",
+        "dongman": "动漫"
+      },
+      "categoryLeads": {
+        "dianying": "按类型挑一部。",
+        "lianxuju": "追更中的剧集。",
+        "zongyi": "综艺节目。",
+        "dongman": "动画与番剧。"
       }
     },
     "categories": {

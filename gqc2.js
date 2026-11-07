@@ -16,8 +16,13 @@ __spiderSite = {
   },
 
   async category(ctx, args) {
-    const slug = String(args.slug || '').trim();
-    if (!slug) throw new Error('分类缺少 slug');
+    // slug 可能为空（App 某些入口只给 key）：退回首页而不是报错，
+    // 「分类缺少 slug」会让整页变成「源站返回了看不懂的数据」。
+    let slug = String(args.slug || '').trim();
+    if (!slug) {
+      const items = parseCards(await get(ctx, BASE() + '/'));
+      return { items: items, page: 1, hasMore: items.length > 0 };
+    }
     const page = Number(args.page) || 1;
     // 分类页：page=1 → /fenlei/<slug>.html；之后 → /fenlei/<slug>-<n>.html
     const url = page <= 1
