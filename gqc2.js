@@ -45,12 +45,14 @@ __spiderSite = {
     const id = idOf(args.ref);
     const html = await get(ctx, BASE() + '/neirong/' + id + '.html');
 
-    const title = pick(html, [
+    const rawTitle = pick(html, [
       /<h1[^>]*>\s*([^<]{1,120})\s*<\/h1>/,
-      /<title>\s*([^<]{1,120}?)\s*[-_|｜]\s*共青春影院/,
-      /<title>\s*([^<]{1,120})\s*<\/title>/
+      /<title>\s*([^<]{1,200}?)\s*[-_|｜]\s*共青春影院/,
+      /<title>\s*([^<]{1,200})\s*<\/title>/
     ]);
-    if (!title) throw new Error('详情没解析到标题（' + html.length + ' 字节）');
+    if (!rawTitle) throw new Error('详情没解析到标题（' + html.length + ' 字节）');
+    // 去掉「_韩剧_在线电影_在线播放」这类站点后缀
+    const title = rawTitle.replace(/_[^_]{1,20}(?:_[^_]{1,20})*$/, '').trim() || rawTitle;
 
     const coverRaw = pick(html, [
       /class="fed-part-poster[^"]*"[\s\S]{0,400}?data-original="([^"]+)"/,
@@ -60,42 +62,43 @@ __spiderSite = {
     ]);
 
     const description = pick(html, [
-      /class="fed-part-esan[^"]*"[^>]*>([\s\S]{0,1200}?)<\/div>/,
-      /class="fed-describe[^"]*"[^>]*>([\s\S]{0,1200}?)<\/div>/,
+      /class="fed-part-esan[^"]*"[^>]*>([\s\S]{0,1500}?)<\/div>/,
+      /class="fed-describe[^"]*"[^>]*>([\s\S]{0,1500}?)<\/div>/,
       /name="description"[^>]*content="([^"]{1,600})"/
     ]);
 
-    // 不认死链接格式：宽泛扫描播放页 URL、m3u8 直链、选集按钮
+    // 真实结构：详情页的选集是 <a href="/bofang/<id>-<线路>-<集号>.html">第NN集</a>
+    // 线路来自 /bofang/<id>-<line>-<no>，集号取链接最后一段（文本可能有「第01集」）
     const eps = scanEpisodes(html, id);
-
-    // 一条都没扫到：兜底给一集（电影通常就一集），让 play 去详情页找地址。
-    // 同时把真实 HTML 的关键片段挂到简介里，方便截图定位结构（诊断用，校准后删）。
-    let diag = '';
     if (!eps.length) {
-      eps.push({ line: '1', no: 1, ref: id + ':1:1' });
-      diag = '\n\n【诊断】未识别到选集结构，以下为页面关键片段：\n' + diagExcerpt(html);
+      throw new Error('详情页没找到选集链接（' + html.length + ' 字节）'
+        + ' — 片段：' + diagExcerpt(html));
     }
 
-    eps.sort(function (a, b) { return a.no - b.no || String(a.line).localeCompare(String(b.line)); });
+    eps.sort(function (a, b) {
+      return a.line - b.line || a.no - b.no;
+    });
 
     const lines = [];
     const lineSeen = new Set();
     for (const ep of eps) {
       if (lineSeen.has(ep.line)) continue;
       lineSeen.add(ep.line);
-      lines.push({ line: ep.line, name: '线路 ' + ep.line });
+      lines.push({ line: ep.line, name: ep.lineName || ('线路 ' + ep.line) });
     }
-    if (!lines.length) lines.push({ line: '1', name: '默认线路' });
+
+    const firstLine = lines[0].line;
+    const inFirst = eps.filter(function (e) { return e.line === firstLine; });
 
     return {
       id: id,
       title: title,
       cover: absolute(coverRaw),
-      description: stripTags(description || '') + diag,
+      description: stripTags(description || ''),
       tags: [],
-      episodeCount: eps.filter(function (e) { return e.line === lines[0].line; }).length,
+      episodeCount: inFirst.length,
       episodes: eps.map(function (e) {
-        return { no: e.no, ref: e.ref, title: '第' + e.no + '集' };
+        return { no: e.no, ref: e.ref, title: e.title || ('第' + e.no + '集'), line: e.line };
       }),
       lines: lines
     };
@@ -105,46 +108,57 @@ __spiderSite = {
     // ref 形如 "<id>:<线路>:<集号>"，或 "<id>:ep<no>"，或就是 id
     const parts = String(args.ref || '').split(':');
     const id = (parts[0] || '').replace(/\D/g, '');
-    let line = parts.length > 2 ? parts[1] : '1';
+    let line = parts.length > 2 ? parts[1] : (args.line || '1');
     let no = parts.length > 2 ? Number(parts[2]) : 0;
     if (!no && parts.length === 2) no = Number(String(parts[1]).replace(/\D/g, ''));
     if (!no) no = Number(args.ep) || 1;
 
-    // 详情页是唯一确认能拿到的页面（detail 已成功），优先从它取地址；
-    // 苹果CMS/vfed 常把 player 数据或 m3u8 直接内嵌在详情页里。
-    const detailHtml = await get(ctx, BASE() + '/neirong/' + id + '.html');
-    let found = extractPlay(detailHtml, line, no);
-    let usedDiag = '';
+    // 真实播放页：/bofang/<id>-<线路>-<集号>.html
+    const playUrl = BASE() + '/bofang/' + id + '-' + line + '-' + no + '.html';
+    let html = '';
+    try {
+      html = await get(ctx, playUrl);
+    } catch (e) {
+      html = '';
+    }
 
+    let found = html ? extractPlay(html) : { url: '', from: '' };
+
+    // 兜底：线路对不上时，从详情页重新解析选集，拿第一条能用的
     if (!found.url) {
-      // 再试几种常见播放页伪静态格式
-      const candidates = [
-        BASE() + '/vodplay/' + id + '-' + line + '-' + no + '.html',
-        BASE() + '/play/' + id + '-' + line + '-' + no + '.html',
-        BASE() + '/vod/' + id + '-' + line + '-' + no + '.html'
-      ];
-      for (const url of candidates) {
-        let h = '';
-        try { h = await get(ctx, url); } catch (e) { continue; }
-        if (h.length < 600) continue;              // 挑战页/404，跳过
-        const r = extractPlay(h, line, no);
-        if (r.url) { found = r; break; }
-        if (!usedDiag) usedDiag = diagExcerpt(h);
-      }
+      try {
+        const detailHtml = await get(ctx, BASE() + '/neirong/' + id + '.html');
+        const eps = scanEpisodes(detailHtml, id);
+        const pickEp = eps.find(function (e) {
+          return String(e.line) === String(line) && Number(e.no) === Number(no);
+        }) || eps[0];
+        if (pickEp) {
+          const alt = BASE() + '/bofang/' + id + '-' + pickEp.line + '-' + pickEp.no + '.html';
+          if (alt !== playUrl) {
+            const h2 = await get(ctx, alt);
+            const r2 = extractPlay(h2);
+            if (r2.url) {
+              found = r2;
+              line = pickEp.line;
+              no = pickEp.no;
+            }
+          }
+        }
+      } catch (e) { /* 兜底失败就走下面的降级 */ }
     }
 
     if (found.url) {
       return {
         url: found.url,
-        alts: [{ line: line, name: (found.from ? found.from + ' 线路 ' : '线路 ') + line, url: found.url }],
-        episodeNumber: no
+        alts: [{ line: String(line), name: (found.from ? found.from + ' ' : '') + '线路 ' + line, url: found.url }],
+        episodeNumber: Number(no)
       };
     }
 
-    // 全都没取到：给 reason（正确的降级），并把诊断片段放进 note
     return {
       reason: 'no-source',
-      note: '详情页 ' + detailHtml.length + ' 字节、播放页也没找到地址。片段：' + (usedDiag || diagExcerpt(detailHtml))
+      note: '播放页 ' + (html ? html.length + ' 字节' : '请求失败')
+        + '，没找到 data-play/m3u8。片段：' + (html ? diagExcerpt(html) : '无')
     };
   }
 };
@@ -251,82 +265,81 @@ function parseCards(html) {
  *   href="javascript:..." 配合 data-* 里的集号
  *   播放列表容器里带 "第N集" 文本的 <a>
  */
+/**
+ * 解析选集。真实结构（2026-11 实测）：
+ *   <a href="/bofang/<id>-<线路>-<集号>.html">第01集</a>
+ * 详情页多集剧有 N 条，单集电影只有 1 条（「立即播放」按钮）。
+ */
 function scanEpisodes(html, id) {
   const eps = [];
   const seen = new Set();
-  const add = (line, no) => {
-    const n = Number(no);
-    if (!Number.isFinite(n) || n < 1 || n > 1000) return;
-    const key = String(line) + '-' + n;
-    if (seen.has(key)) return;
-    seen.add(key);
-    eps.push({ line: String(line), no: n, ref: id + ':' + line + ':' + n });
-  };
-
-  // ① 各种带 -线路-集号 的伪静态路径
-  const reA = /(?:href|data-[a-z-]*url|url)\s*=\s*["']?\/?(?:vodplay|play|bfq|bofang)\/[^"'\s>]*?(\d+)[-_](\d+)[-_](\d+)\.html/gi;
+  const re = /<a[^>]*href="([^"]*\/bofang\/(\d+)-(\d+)-(\d+)\.html)"[^>]*>([\s\S]{0,120}?)<\/a>/g;
   let m;
-  while ((m = reA.exec(html))) add(m[2], m[3]);
-
-  // ② sid/nid 查询串（sid=线路&nid=集号）
-  const reB = /[?&](?:sid|player|from)=(\d+)[^"'\s>]*?[?&](?:nid|ep|num|ji)=(\d+)/gi;
-  while ((m = reB.exec(html))) add(m[1], m[2]);
-
-  // ③ 播放列表容器里的 "第N集" 链接（取 href 里的路径当线路，集号取文本）
-  if (!eps.length) {
-    const reC = /<a[^>]*href="([^"]+)"[^>]*>([^<]{0,20}?第\s*(\d+)\s*集[^<]{0,10})<\/a>/gi;
-    while ((m = reC.exec(html))) {
-      const href = m[1];
-      const lm = href.match(/(\d+)[-_](\d+)[-_](\d+)\.html/) || href.match(/[-/](\d+)\.html/);
-      add(lm ? lm[1] : '1', m[3]);
-    }
+  while ((m = re.exec(html))) {
+    if (m[2] !== String(id)) continue;          // 只认当前视频的
+    const line = String(m[3]);
+    const no = Number(m[4]);
+    if (!Number.isFinite(no) || no < 1) continue;
+    const key = line + '-' + no;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const text = stripTags(m[5]).trim();
+    const label = /立即播放|播放|HD|正片|抢先/i.test(text) && !/第\s*\d+/.test(text) ? '' : text;
+    eps.push({
+      line: line,
+      no: no,
+      ref: id + ':' + line + ':' + no,
+      title: label || ('第' + no + '集'),
+    });
   }
-
   return eps;
 }
 
-/** 从一段 HTML 里尽力提取可播地址，返回 {url, from} */
-function extractPlay(html, line, no) {
+/**
+ * 从播放页提取可播地址。真实结构（2026-11 实测）：
+ *   <iframe ... data-play="https://v.xxx/index.m3u8" data-pars="https://play.xxx/player/ec.php?...">
+ * 优先 data-play（直链），其次页面里的 m3u8，最后 data-pars / iframe src。
+ */
+function extractPlay(html) {
   const out = { url: '', from: '' };
 
-  // ① MacCMS player_xxxx = {...}
-  const pv = html.match(/player_[a-z0-9_]+\s*=\s*(\{[\s\S]{0,6000}?\})\s*;?/i);
+  // ① iframe 上的 data-play：直链 m3u8/mp4，最优先
+  const dp = html.match(/data-play\s*=\s*"([^"]{6,500})"/i);
+  if (dp) {
+    const src = absolute(decodeEntities(dp[1]));
+    if (/^https?:/i.test(src)) { out.url = src; return out; }
+  }
+
+  // ② 页面里任意 m3u8 / mp4（含转义 \/ 和 &amp;）
+  const cleaned = html.replace(/\\\//g, '/').replace(/&amp;/g, '&');
+  const mm = cleaned.match(/(https?:\/\/[^"'\s<>\\]{6,400}?\.(?:m3u8|mp4)(?:\?[^"'\s<>\\]{0,200})?)/i);
+  if (mm) { out.url = absolute(mm[1]); return out; }
+
+  // ③ MacCMS player_xxxx = {...}
+  const pv = cleaned.match(/player_[a-z0-9_]+\s*=\s*(\{[\s\S]{0,6000}?\})\s*;?/i);
   if (pv) {
     try {
       const d = JSON.parse(pv[1]);
-      const raw = d.url || d.video || d.playurl || '';
-      const src = absolute(raw);
+      const src = absolute(d.url || d.video || d.playurl || '');
       if (/^https?:/i.test(src)) { out.url = src; out.from = d.from || ''; return out; }
-    } catch (e) { /* 不是 JSON，继续找别的 */ }
+    } catch (e) { /* 继续 */ }
   }
 
-  // ② 页面里任意 m3u8 / mp4 直链（含转义过的 \/ 和 &amp;）
-  const cleaned = html.replace(/\\\//g, '/').replace(/&amp;/g, '&');
-  const re = /(https?:\/\/[^"'\s<>\\]{6,400}?\.(?:m3u8|mp4|flv)(?:\?[^"'\s<>\\]{0,200})?)/i;
-  const mm = cleaned.match(re);
-  if (mm) {
-    out.url = absolute(mm[1]);
-    return out;
+  // ④ data-pars / iframe src：是解析页，App 播不了直链，但给出来比没有强
+  const pars = html.match(/data-pars\s*=\s*"([^"]{6,500})"/i);
+  if (pars) {
+    const src = absolute(decodeEntities(pars[1]));
+    if (/^https?:/i.test(src)) { out.url = src; out.from = 'pars'; return out; }
   }
-
-  // ③ iframe 的 src（可能是解析页，App 直接播不了，但比没有强）
-  const ifr = html.match(/<(?:iframe|frame)[^>]+src="([^"]+)"/i);
+  const ifr = html.match(/<iframe[^>]+src="([^"]{6,500})"/i);
   if (ifr) {
-    const src = absolute(ifr[1]);
-    if (/^https?:/i.test(src)) { out.url = src; return out; }
-  }
-
-  // ④ data- 属性里塞的地址
-  const dm = html.match(/data-(?:url|src|play|video)\s*=\s*["']([^"']{6,400})["']/i);
-  if (dm) {
-    const src = absolute(decodeEntities(dm[1]));
-    if (/^https?:/i.test(src)) { out.url = src; return out; }
+    const src = absolute(decodeEntities(ifr[1]));
+    if (/^https?:/i.test(src)) { out.url = src; out.from = 'iframe'; return out; }
   }
 
   return out;
 }
 
-/** 截一段最有诊断价值的 HTML（选集/播放相关区域），用于截图回传定位 */
 function diagExcerpt(html) {
   const keys = ['vodplay', 'play', '选集', 'fed-play', 'fed-part-play', 'player_', 'm3u8', 'nid=', 'sid='];
   let best = -1;
