@@ -97,11 +97,32 @@ __spiderSite = {
     const firstLine = lines[0].line;
     const inFirst = eps.filter(function (e) { return e.line === firstLine; });
 
+    // 临时诊断：把播放页的真实检测结果写进简介（App 会显示简介，
+    // 但不显示 play() 的 note，所以只能从这里把信息带出来）
+    let diag = '';
+    try {
+      const first = inFirst[0];
+      const pUrl = BASE() + '/bofang/' + id + '-' + first.line + '-' + first.no + '.html';
+      const ph = await get(ctx, pUrl);
+      const r = extractPlay(ph);
+      if (r.url) {
+        diag = '播放页 ' + ph.length + 'B ✓ 已取到地址';
+      } else if (/Just a moment|challenge-platform/i.test(ph)) {
+        diag = '播放页 ' + ph.length + 'B ✗ Cloudflare挑战页';
+      } else if (ph.length < 2000) {
+        diag = '播放页 ' + ph.length + 'B ✗ 页面过短';
+      } else {
+        diag = '播放页 ' + ph.length + 'B ✗ 无data-play/m3u8';
+      }
+    } catch (e) {
+      diag = '播放页请求失败: ' + String(e && e.message || e).slice(0, 60);
+    }
+
     return {
       id: id,
       title: title,
       cover: absolute(coverRaw),
-      description: stripTags(description || ''),
+      description: stripTags(description || '') + '\n\n【诊断】' + diag,
       tags: [],
       episodeCount: inFirst.length,
       episodes: inFirst.map(function (e) {
