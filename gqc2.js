@@ -4,7 +4,7 @@
 __spiderSite = {
   id: 'gqc2',
   name: '共青春影院',
-  version: 1,
+  version: 2,
   requires: '>=1',
   hosts: ['gqc2.top', 'www.gqc2.top', '1.000163.xyz', '2.000163.xyz', '3.000163.xyz'],
 
@@ -122,7 +122,7 @@ __spiderSite = {
       id: id,
       title: title,
       cover: absolute(coverRaw),
-      description: stripTags(description || '') + '\n\n【诊断】' + diag,
+      description: '[spider v2]' + '\n' + stripTags(description || '') + '\n\n【诊断】' + diag,
       tags: [],
       episodeCount: inFirst.length,
       episodes: inFirst.map(function (e) {
