@@ -129,7 +129,12 @@ __spiderSite = {
       html = '';
     }
 
-    let found = html ? extractPlay(html) : { url: '', from: '' };
+    let found = html ? extractPlay(html) : { url: '', from: '', host: '' };
+
+    // 记录每个尝试过的 URL 和它的体量，失败时一并报出来
+    const tried = [];
+    if (html) tried.push(playUrl + ' → ' + html.length + 'B');
+    else tried.push(playUrl + ' → 请求失败');
 
     // 兜底：线路对不上时，从详情页重新解析选集，拿第一条能用的
     if (!found.url) {
@@ -176,7 +181,7 @@ __spiderSite = {
     }
     return {
       reason: 'no-source',
-      note: why + '。URL: ' + playUrl + '；片段：' + (html ? diagExcerpt(html) : '无')
+      note: why + '。尝试：' + tried.join(' | ') + '；片段：' + (html ? diagExcerpt(html) : '无')
     };
   }
 };
