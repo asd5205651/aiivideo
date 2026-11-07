@@ -1,0 +1,76 @@
+{
+  "origin": "https://m.ezdmw.org",
+  "headers": {
+    "User-Agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36",
+    "Referer": "{origin}/",
+    "Origin": "{origin}"
+  },
+  "cover": {
+    "mode": "plain",
+    "allowedHosts": [
+      "www.ezdmw.org",
+      "m.ezdmw.org",
+      "image.ezdmw.com"
+    ]
+  },
+  "web": {
+    "spider": "https://raw.githubusercontent.com/asd5205651/aiivideo/main/ezdmw-v3.js",
+    "ui": {
+      "tabs": [
+        { "key": "hot", "label": "热门", "icon": "flame" },
+        { "key": "serial", "label": "连载", "icon": "tv" },
+        { "key": "finish", "label": "完结", "icon": "check" },
+        { "key": "tag", "label": "类型", "icon": "sparkle" }
+      ],
+      "categoryIds": {
+        "hot": ["补番推荐"],
+        "serial": ["连载"],
+        "finish": ["完"],
+        "tag": ["热血", "恋爱", "魔法", "战斗", "搞笑", "校园", "治愈", "悬疑"]
+      },
+      "categoryLabels": {
+        "hot": ["补番推荐"],
+        "serial": ["连载"],
+        "finish": ["完结"],
+        "tag": ["热血", "恋爱", "魔法", "战斗", "搞笑", "校园", "治愈", "悬疑"]
+      },
+      "categoryTitles": {
+        "hot": "热门推荐",
+        "serial": "连载中",
+        "finish": "已完结",
+        "tag": "按类型"
+      },
+      "categoryLeads": {
+        "hot": "大家都在追的番。",
+        "serial": "连载中的番剧。",
+        "finish": "已经完结，可以一口气看完。",
+        "tag": "按题材挑一部。"
+      }
+    },
+    "categories": {
+      "补番推荐": "补番推荐",
+      "连载": "连载",
+      "完": "完结",
+      "热血": "热血",
+      "恋爱": "恋爱",
+      "魔法": "魔法",
+      "战斗": "战斗",
+      "搞笑": "搞笑",
+      "校园": "校园",
+      "治愈": "治愈",
+      "悬疑": "悬疑"
+    }
+  },
+  "http": {
+    "hosts": [
+      "m.ezdmw.org",
+      "www.ezdmw.org",
+      "player.ezdmw.com",
+      "player.danmuzf.vip",
+      "ins.wdbed.vip",
+      "image.ezdmw.com",
+      "my.microsoftpersonalcontent.com",
+      "p16-va-tiktok.ibyteimg.com"
+    ]
+  }
+}
