@@ -16,7 +16,7 @@
     ]
   },
   "web": {
-    "spider": "https://raw.githubusercontent.com/asd5205651/aiivideo/main/gqc2.js",
+    "spider": "https://raw.githubusercontent.com/asd5205651/aiivideo/main/gqc2-v2.js",
     "ui": {
       "tabs": [
         {
