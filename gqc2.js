@@ -112,7 +112,7 @@ __spiderSite = {
       } else if (ph.length < 2000) {
         diag = '播放页 ' + ph.length + 'B ✗ 页面过短';
       } else {
-        diag = '播放页 ' + ph.length + 'B ✗ 无data-play/m3u8';
+        diag = '播放页 ' + ph.length + 'B ✗ 无data-play/m3u8 | 片段: ' + stripTags(ph).slice(0, 180);
       }
     } catch (e) {
       diag = '播放页请求失败: ' + String(e && e.message || e).slice(0, 60);
@@ -133,76 +133,67 @@ __spiderSite = {
   },
 
   async play(ctx, args) {
-    // ref 形如 "<id>:<线路>:<集号>"，或 "<id>:ep<no>"，或就是 id
-    const parts = String(args.ref || '').split(':');
-    const id = (parts[0] || '').replace(/\D/g, '');
-    let line = parts.length > 2 ? parts[1] : (args.line || '1');
-    let no = parts.length > 2 ? Number(parts[2]) : 0;
-    if (!no && parts.length === 2) no = Number(String(parts[1]).replace(/\D/g, ''));
+    // ref 可能是 "362248:1:1"（我给的）、"362248:ep1"、或就是 id。
+    // 不猜格式：把候选 URL 全试一遍，第一个取到地址的即用。
+    const raw = String(args.ref || '');
+    const id = (raw.match(/\d{3,}/) || [])[0] || '';
+    if (!id) return { reason: 'no-source', note: 'ref 里没有 id：' + raw.slice(0, 40) };
+
+    // 从 ref 里尽力还原线路/集号
+    // ref 里冒号分段：<id>:<线路>:<集号> → 最后一个数是集号，前一个是线路
+    const segs = raw.split(':').filter(Boolean).slice(1);
+    const allNums = [];
+    for (const seg of segs) {
+      const nums = String(seg).match(/\d+/g);
+      if (nums) for (const n of nums) allNums.push(Number(n));
+    }
+    let no = 0;
+    let line = String(args.line || '');
+    if (allNums.length >= 2) {
+      no = allNums[allNums.length - 1];
+      line = line || String(allNums[allNums.length - 2]);
+    } else if (allNums.length === 1) {
+      no = allNums[0];
+    }
     if (!no) no = Number(args.ep) || 1;
+    if (!line) line = '1';
 
-    // 真实播放页：/bofang/<id>-<线路>-<集号>.html
-    const playUrl = BASE() + '/bofang/' + id + '-' + line + '-' + no + '.html';
-    let html = '';
-    try {
-      html = await get(ctx, playUrl);
-    } catch (e) {
-      html = '';
-    }
-
-    let found = html ? extractPlay(html) : { url: '', from: '', host: '' };
-
-    // 记录每个尝试过的 URL 和它的体量，失败时一并报出来
     const tried = [];
-    if (html) tried.push(playUrl + ' → ' + html.length + 'B');
-    else tried.push(playUrl + ' → 请求失败');
 
-    // 兜底：线路对不上时，从详情页重新解析选集，拿第一条能用的
-    if (!found.url) {
+    // 候选顺序：先用 ref 解析出的，再试常见线路号
+    const lineCands = [line, '1', '2', '3'].filter(function (v, i, a) { return a.indexOf(v) === i; });
+    const urlCands = [];
+    for (const l of lineCands) {
+      urlCands.push(BASE() + '/bofang/' + id + '-' + l + '-' + no + '.html');
+    }
+
+    for (let ci = 0; ci < urlCands.length; ci++) {
+      const u = urlCands[ci];
+      const usedLine = lineCands[ci] || "1";
+      let html = '';
       try {
-        const detailHtml = await get(ctx, BASE() + '/neirong/' + id + '.html');
-        const eps = scanEpisodes(detailHtml, id);
-        const pickEp = eps.find(function (e) {
-          return String(e.line) === String(line) && Number(e.no) === Number(no);
-        }) || eps[0];
-        if (pickEp) {
-          const alt = BASE() + '/bofang/' + id + '-' + pickEp.line + '-' + pickEp.no + '.html';
-          if (alt !== playUrl) {
-            const h2 = await get(ctx, alt);
-            const r2 = extractPlay(h2);
-            if (r2.url) {
-              found = r2;
-              line = pickEp.line;
-              no = pickEp.no;
-            }
-          }
-        }
-      } catch (e) { /* 兜底失败就走下面的降级 */ }
-    }
+        html = await get(ctx, u);
+      } catch (e) {
+        tried.push(u + ' → 请求失败');
+        continue;
+      }
+      if (!html) { tried.push(u + ' → 空'); continue; }
+      tried.push(u + ' → ' + html.length + 'B');
 
-    if (found.url) {
-      return {
-        url: found.url,
-        alts: [{ line: String(line), name: (found.from ? found.from + ' ' : '') + '线路 ' + line, url: found.url }],
-        episodeNumber: Number(no),
-        note: found.host ? ('CDN: ' + found.host) : ''
-      };
-    }
-
-    // 降级：把失败原因说清楚，别只说「没找到」
-    let why = '请求失败';
-    if (html) {
-      if (/Just a moment|cf-browser-verification|challenge-platform/i.test(html)) {
-        why = '拿到的是 Cloudflare 挑战页（' + html.length + ' 字节），盾没过';
-      } else if (html.length < 2000) {
-        why = '页面过短（' + html.length + ' 字节），可能是 404 或空页';
-      } else {
-        why = '拿到 ' + html.length + ' 字节，但没找到 data-play/m3u8';
+      const r = extractPlay(html);
+      if (r.url) {
+        return {
+          url: r.url,
+          alts: [{ line: String(usedLine), name: "线路 " + usedLine, url: r.url }],
+          episodeNumber: Number(no),
+        };
       }
     }
+
+    // 全部失败：把每个 URL 的体量和页面性质写进 note（诊断用）
     return {
       reason: 'no-source',
-      note: why + '。尝试：' + tried.join(' | ') + '；片段：' + (html ? diagExcerpt(html) : '无')
+      note: '候选都失败：' + tried.join(' | '),
     };
   }
 };
