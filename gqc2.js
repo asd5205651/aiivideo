@@ -156,10 +156,20 @@ __spiderSite = {
       };
     }
 
+    // 降级：把失败原因说清楚，别只说「没找到」
+    let why = '请求失败';
+    if (html) {
+      if (/Just a moment|cf-browser-verification|challenge-platform/i.test(html)) {
+        why = '拿到的是 Cloudflare 挑战页（' + html.length + ' 字节），盾没过';
+      } else if (html.length < 2000) {
+        why = '页面过短（' + html.length + ' 字节），可能是 404 或空页';
+      } else {
+        why = '拿到 ' + html.length + ' 字节，但没找到 data-play/m3u8';
+      }
+    }
     return {
       reason: 'no-source',
-      note: '播放页 ' + (html ? html.length + ' 字节' : '请求失败')
-        + '，没找到 data-play/m3u8。片段：' + (html ? diagExcerpt(html) : '无')
+      note: why + '。URL: ' + playUrl + '；片段：' + (html ? diagExcerpt(html) : '无')
     };
   }
 };
