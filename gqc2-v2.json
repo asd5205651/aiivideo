@@ -1,0 +1,142 @@
+{
+  "origin": "https://gqc2.top",
+  "headers": {
+    "User-Agent": "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36",
+    "Referer": "{origin}/",
+    "Origin": "{origin}"
+  },
+  "cover": {
+    "mode": "plain",
+    "allowedHosts": [
+      "1.000163.xyz",
+      "2.000163.xyz",
+      "img.meituan.net",
+      "p0.meituan.net",
+      "p1.meituan.net"
+    ]
+  },
+  "web": {
+    "spider": "https://raw.githubusercontent.com/asd5205651/aiivideo/main/gqc2-v2.js",
+    "ui": {
+      "tabs": [
+        {
+          "key": "dianying",
+          "label": "电影",
+          "icon": "film"
+        },
+        {
+          "key": "lianxuju",
+          "label": "连续剧",
+          "icon": "tv"
+        },
+        {
+          "key": "zongyi",
+          "label": "综艺",
+          "icon": "mic"
+        },
+        {
+          "key": "dongman",
+          "label": "动漫",
+          "icon": "sparkle"
+        }
+      ],
+      "categoryIds": {
+        "dianying": [
+          "dianying",
+          "dongzuo",
+          "xiju",
+          "juqing",
+          "kehuan",
+          "aiqing",
+          "kongbu",
+          "zhanzheng"
+        ],
+        "lianxuju": [
+          "lianxuju"
+        ],
+        "zongyi": [
+          "zongyi"
+        ],
+        "dongman": [
+          "dongman"
+        ]
+      },
+      "categoryLabels": {
+        "dianying": [
+          "全部",
+          "动作片",
+          "喜剧片",
+          "剧情片",
+          "科幻片",
+          "爱情片",
+          "恐怖片",
+          "战争片"
+        ],
+        "lianxuju": [
+          "连续剧"
+        ],
+        "zongyi": [
+          "综艺"
+        ],
+        "dongman": [
+          "动漫"
+        ]
+      },
+      "categoryTitles": {
+        "dianying": "电影",
+        "lianxuju": "连续剧",
+        "zongyi": "综艺",
+        "dongman": "动漫"
+      },
+      "categoryLeads": {
+        "dianying": "按类型挑一部。",
+        "lianxuju": "追更中的剧集。",
+        "zongyi": "综艺节目。",
+        "dongman": "动画与番剧。"
+      }
+    },
+    "categories": {
+      "dianying": "电影",
+      "lianxuju": "连续剧",
+      "zongyi": "综艺",
+      "dongman": "动漫",
+      "duanju": "短剧",
+      "dongzuo": "动作片",
+      "xiju": "喜剧片",
+      "juqing": "剧情片",
+      "kehuan": "科幻片",
+      "aiqing": "爱情片",
+      "kongbu": "恐怖片",
+      "zhanzheng": "战争片"
+    },
+    "shield": {
+      "warmup": "https://gqc2.top/bofang/362248-1-1.html",
+      "hosts": [
+        "gqc2.top",
+        "www.gqc2.top",
+        "1.000163.xyz",
+        "2.000163.xyz",
+        "3.000163.xyz"
+      ],
+      "cookie": "https://gqc2.top/"
+    }
+  },
+  "http": {
+    "hosts": [
+      "gqc2.top",
+      "www.gqc2.top",
+      "v.lzcdn24.com",
+      "v.lzcdn25.com",
+      "v.lzcdn26.com",
+      "v.lzcdn27.com",
+      "cdn.yzzy31-play.com",
+      "cdn.yzzy32-play.com",
+      "cdn.yzzy33-play.com",
+      "cdn.yzzy34-play.com",
+      "play.gqc.ink",
+      "gqc.ink",
+      "jx.hls.one",
+      "jx.202617.xyz"
+    ]
+  }
+}
