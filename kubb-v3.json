@@ -1,0 +1,42 @@
+{
+  "sites": [
+    {
+      "key": "kubb_v3",
+      "name": "酷播 v3",
+      "type": 3,
+      "api": "https://raw.githubusercontent.com/asd5205651/aiivideo/main/kubb-v3.js",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 0,
+      "style": {
+        "type": "rect",
+        "ratio": 0.75
+      },
+      "ext": {
+        "api": "https://m10.kubb.tv",
+        "rank": "https://rankv21.kubb.tv",
+        "upload": "https://upload.kubb.tv",
+        "img": "https://static.kubb.tv",
+        "web": "https://www.kubb.tv/",
+        "page_size": 20,
+        "include_ad": 0
+      }
+    }
+  ],
+  "lives": [
+    {
+      "name": "酷播直播 v3",
+      "api": "https://raw.githubusercontent.com/asd5205651/aiivideo/main/kubb-v3.js",
+      "ext": {
+        "api": "https://m10.kubb.tv",
+        "rank": "https://rankv21.kubb.tv",
+        "upload": "https://upload.kubb.tv",
+        "img": "https://static.kubb.tv",
+        "web": "https://www.kubb.tv/",
+        "page_size": 20,
+        "include_ad": 0
+      }
+    }
+  ]
+}
